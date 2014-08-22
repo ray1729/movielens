@@ -19,7 +19,7 @@ Assuming you download and unzip into the resources folder, you can get started v
     (require '[clojure.java.io :as io])
     (require '[uk.org.1729.movielens :as ml])
     
-    (def graph (ml/init-graph "/tmp/moveilens"))
+    (def graph (ml/init-graph "/tmp/movielens"))
     (ml/load-data graph (io/resource "ml-100k"))
 
 ## License
