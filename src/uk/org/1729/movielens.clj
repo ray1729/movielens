@@ -24,28 +24,28 @@
     (ts/with-management-system [mgmt graph]
       (ts/make-vertex-label mgmt "Genre")
       (ts/make-property-key mgmt :genre-id Long)
-      (ts/build-composite-index mgmt :genre-id-idx :vertex [:genre-id] :unique? true :index-only "Genre")
+      (ts/build-composite-index mgmt :genre-id-idx :vertex [:genre-id] :unique? true)
       (ts/make-property-key mgmt :genre String)
-      (ts/build-composite-index mgmt :genre-idx :vertex [:genre] :unique? true :index-only "Genre")
+      (ts/build-composite-index mgmt :genre-idx :vertex [:genre] :unique? true)
       (ts/make-vertex-label mgmt "Movie")
       (ts/make-property-key mgmt :movie-id Long)
-      (ts/build-composite-index mgmt :movie-id :vertex [:movie-id] :unique? true :index-only "Movie")
+      (ts/build-composite-index mgmt :movie-id :vertex [:movie-id] :unique? true)
       (ts/make-property-key mgmt :title String)
-      (ts/build-mixed-index mgmt :movie-title-idx :vertex [:title] "search" :index-only "Movie")
+      (ts/build-mixed-index mgmt :movie-title-idx :vertex [:title] "search")
       (ts/make-property-key mgmt :release-date java.util.Date)
       (ts/make-property-key mgmt :video-release-date java.util.Date)
       (ts/make-property-key mgmt :imdb-url String)
       (ts/make-vertex-label mgmt "User")
       (ts/make-property-key mgmt :user-id Long)
-      (ts/build-composite-index mgmt :user-id-idx :vertex [:user-id] :unique? true :index-only "User")
+      (ts/build-composite-index mgmt :user-id-idx :vertex [:user-id] :unique? true)
       (ts/make-property-key mgmt :age Long)
-      (ts/build-mixed-index mgmt :user-age-idx :vertex [:age] "search" :index-only "User")
+      (ts/build-mixed-index mgmt :user-age-idx :vertex [:age] "search")
       (ts/make-property-key mgmt :gender String)
-      (ts/build-composite-index mgmt :user-gender-idx :vertex [:gender] :index-only "User")
+      (ts/build-composite-index mgmt :user-gender-idx :vertex [:gender])
       (ts/make-property-key mgmt :occupation String)
-      (ts/build-composite-index mgmt :user-occupation-idx :vertex [:occupation] :index-only "User")
+      (ts/build-composite-index mgmt :user-occupation-idx :vertex [:occupation])
       (ts/make-property-key mgmt :zip-code String)
-      (ts/build-composite-index mgmt :user-zip-code-idx :vertex [:zip-code] :index-only "User")
+      (ts/build-composite-index mgmt :user-zip-code-idx :vertex [:zip-code])
       (ts/make-edge-label mgmt "IS_GENRE" :multiplicity :many-to-many)
       (ts/make-edge-label mgmt "RATED" :multiplitity :many-to-many)
       (ts/make-property-key mgmt :rating Long)
@@ -159,3 +159,28 @@
     (println (str "Loading " filename))
     (tg/with-transaction [tx graph]
       (load tx (io/file data-dir filename)))))
+
+(defn movies-rated-by-user
+  [graph user]
+  (map te/head-vertex (tv/outgoing-edges-of user "RATED")))
+
+(defn users-who-rated-movie
+  [graph movie]
+  (map te/tail-vertex (tv/incoming-edges-of movie "RATED")))
+
+(defn users-with-overlapping-ratings
+  "Return the users who rated at least one movie in common with `user`."
+  [graph user]
+  (reduce (fn [accum movie]
+            (into accum (map te/tail-vertex (tv/incoming-edges-of movie "RATED"))))
+          #{}
+          (movies-rated-by-user graph user)))
+
+(defn user-ratings
+  "Return a map of movie-id/rating for all the movies rated by `user`."
+  [graph user]
+  (reduce (fn [accum rating]
+            (let [movie (te/head-vertex rating)]
+              (assoc accum (tv/get movie :movie-id) (te/get rating :rating))))
+          {}
+          (tv/outgoing-edges-of user "RATED")))

@@ -8,4 +8,5 @@
                  [clj-time "0.8.0"]
                  [com.thinkaurelius.titan/titan-core "0.5.0"]
                  [com.thinkaurelius.titan/titan-berkeleyje "0.5.0"]
-                 [com.thinkaurelius.titan/titan-lucene "0.5.0"]])
+                 [com.thinkaurelius.titan/titan-lucene "0.5.0"]]
+  :profiles {:dev {:dependencies [[org.clojure/tools.trace "0.7.8"]]}})
