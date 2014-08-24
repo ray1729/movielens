@@ -139,11 +139,8 @@
 (defn load-data
   [parse create graph file]
   (with-open [rdr (io/reader file)]
-    (with-redefs [find-genre-by-id (memoize find-genre-by-id)
-                  find-user-by-id  (memoize find-user-by-id)
-                  find-movie-by-id (memoize find-movie-by-id)]
-      (doseq [record (->> (line-seq rdr) (map str/trim) (remove empty?))]
-        (create graph (parse record))))))
+    (doseq [record (->> (line-seq rdr) (map str/trim) (remove empty?))]
+      (create graph (parse record)))))
 
 (def load-genres  (partial load-data parse-genre  create-genre))
 (def load-users   (partial load-data parse-user   create-user))
@@ -158,7 +155,10 @@
                            [load-ratings "u.data"]]]
     (println (str "Loading " filename))
     (tg/with-transaction [tx graph]
-      (load tx (io/file data-dir filename)))))
+      (with-redefs [find-genre-by-id (memoize find-genre-by-id)
+                    find-user-by-id  (memoize find-user-by-id)
+                    find-movie-by-id (memoize find-movie-by-id)]
+        (load tx (io/file data-dir filename))))))
 
 (defn movies-rated-by-user
   [graph user]
